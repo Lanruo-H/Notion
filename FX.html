@@ -4,7 +4,7 @@
     <style>
         .currency-container {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
-            max-width: 800px;
+            max-width: 1200px;
             margin: 20px auto;
             padding: 20px;
             background: #fff;
@@ -129,10 +129,10 @@ async function fetchExchangeRates() {
         
         // 更新汇率显示
         const ratesHTML = [
-            createRateItem('USD-CNY', exchangeRates.CNY.value),
-            createRateItem('USD-HKD', exchangeRates.HKD.value),
-            createRateItem('USD-TWD', exchangeRates.TWD.value),
-            createRateItem('MOP-HKD', exchangeRates.HKD.value / exchangeRates.MOP.value)
+            createRateItem('USD/CNY', exchangeRates.CNY.value),
+            createRateItem('USD/HKD', exchangeRates.HKD.value),
+            createRateItem('USD/TWD', exchangeRates.TWD.value),
+            createRateItem('MOP/HKD', exchangeRates.HKD.value / exchangeRates.MOP.value)
         ].join('');
         
         ratesGrid.innerHTML = ratesHTML;
