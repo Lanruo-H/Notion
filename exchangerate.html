@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>汇率工具</title>
+    <style>
+        .container { margin: 20px; padding: 20px; border: 1px solid #ccc; }
+        .rate-item { margin: 10px 0; }
+        .converter-box { margin-top: 20px; }
+        .input-group { margin: 10px 0; }
+        button { padding: 5px 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <!-- 汇率显示组件 -->
+    <div class="container">
+        <h2>实时汇率显示</h2>
+        <button id="update-rates">更新汇率</button>
+        <div id="rates-container">
+            <p id="update-status">请点击按钮获取最新汇率</p >
+            <div class="rate-item">USD/CNY: <span id="usd-cny">--</span></div>
+            <div class="rate-item">MOP/HKD: <span id="mop-hkd">--</span></div>
+            <div class="rate-item">TWD/USD: <span id="twd-usd">--</span></div>
+            <div class="rate-item">HKD/USD: <span id="hkd-usd">--</span></div>
+            <div>最后更新时间：<span id="update-date">--</span></div>
+        </div>
+    </div>
+
+    <!-- 货币转换组件 -->
+    <div class="container">
+        <h2>货币转换器</h2>
+        <div class="converter-box">
+            <div class="input-group">
+                <input type="number" id="amount" placeholder="输入金额">
+                <select id="from-currency"></select>
+                <button id="swap-currencies">⇄</button>
+                <select id="to-currency"></select>
+            </div>
+            <button onclick="performConversion()">转换</button>
+            <div id="conversion-result"></div>
+        </div>
+    </div>
+
+<script>
+// 通用配置
+const API_URL = 'https://api.currencyapi.com/v3/latest?apikey=cur_live_os1dTEv8zwFkJZ0DitDtQWQf7gLkU3ObCIlaZsJr&currencies=CNY%2CHKD%2CTWD%2CMOP%2CKRW%2CEUR';
+const CURRENCIES = ['USD', 'CNY', 'HKD', 'TWD', 'KRW', 'MOP', 'EUR'];
+let lastRates = null; // 存储最新汇率数据
+
+// 初始化下拉菜单
+function initCurrencySelectors() {
+    const fromSelect = document.getElementById('from-currency');
+    const toSelect = document.getElementById('to-currency');
+    
+    CURRENCIES.forEach(currency => {
+        fromSelect.appendChild(new Option(currency, currency));
+        toSelect.appendChild(new Option(currency, currency));
+    });
+    fromSelect.value = 'USD';
+    toSelect.value = 'CNY';
+}
+
+// 获取并更新汇率数据
+async function fetchExchangeRates() {
+    try {
+        const response = await fetch(API_URL);
+        if (!response.ok) throw new Error('网络请求失败');
+        const data = await response.json();
+        
+        // 处理汇率数据（API返回的是USD作为基准货币的汇率）
+        const rates = { USD: 1 }; // 添加USD基准汇率
+        Object.entries(data.data).forEach(([code, info]) => {
+            rates[code] = info.value;
+        });
+
+        // 存储数据并更新显示
+        lastRates = {
+            rates,
+            date: new Date(data.meta.last_updated_at)
+        };
+        updateRateDisplay();
+    } catch (error) {
+        console.error('获取汇率失败:', error);
+        document.getElementById('update-status').textContent = '汇率更新失败，请稍后重试';
+    }
+}
+
+// 更新汇率显示
+function updateRateDisplay() {
+    if (!lastRates) return;
+
+    const { rates, date } = lastRates;
+    document.getElementById('update-status').textContent = '最新汇率：';
+    
+    // 计算并显示特定货币对汇率
+    document.getElementById('usd-cny').textContent = rates.CNY?.toFixed(4) || '--';
+    document.getElementById('mop-hkd').textContent = (rates.HKD / rates.MOP)?.toFixed(4) || '--';
+    document.getElementById('twd-usd').textContent = (1 / rates.TWD)?.toFixed(4) || '--';
+    document.getElementById('hkd-usd').textContent = (1 / rates.HKD)?.toFixed(4) || '--';
+    document.getElementById('update-date').textContent = date.toLocaleString();
+}
+
+// 执行货币转换
+function performConversion() {
+    if (!lastRates) {
+        document.getElementById('conversion-result').textContent = '请先获取最新汇率';
+        return;
+    }
+
+    const amount = parseFloat(document.getElementById('amount').value);
+    if (isNaN(amount)) {
+        document.getElementById('conversion-result').textContent = '请输入有效金额';
+        return;
+    }
+
+    const from = document.getElementById('from-currency').value;
+    const to = document.getElementById('to-currency').value;
+    const converted = amount * (lastRates.rates[to] / lastRates.rates[from]);
+    
+    document.getElementById('conversion-result').textContent = 
+        `${amount.toFixed(2)} ${from} = ${converted.toFixed(2)} ${to}`;
+}
+
+// 货币互换功能
+function swapCurrencies() {
+    const from = document.getElementById('from-currency');
+    const to = document.getElementById('to-currency');
+    [from.value, to.value] = [to.value, from.value];
+    performConversion();
+}
+
+// 初始化
+document.addEventListener('DOMContentLoaded', () => {
+    initCurrencySelectors();
+    
+    // 绑定事件监听
+    document.getElementById('update-rates').addEventListener('click', fetchExchangeRates);
+    document.getElementById('swap-currencies').addEventListener('click', swapCurrencies);
+    document.getElementById('amount').addEventListener('input', performConversion);
+    document.getElementById('from-currency').addEventListener('change', performConversion);
+    document.getElementById('to-currency').addEventListener('change', performConversion);
+});
+</script>
+</body>
+</html>
