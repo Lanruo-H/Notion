@@ -4,7 +4,7 @@
     <style>
         .currency-container {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
-            max-width: 1200px;
+            max-width: 800px;
             margin: 20px auto;
             padding: 20px;
             background: #fff;
@@ -158,7 +158,7 @@ async function fetchExchangeRates() {
     }
 }
 
-// 货币转换计算
+// 货币转换计算（修正后）
 function calculateConversion() {
     if (!exchangeRates) {
         alert('请先获取实时汇率');
@@ -174,8 +174,9 @@ function calculateConversion() {
         return;
     }
 
-    const fromRate = from === 'USD' ? 1 : (1 / exchangeRates[from]?.value);
-    const toRate = to === 'USD' ? 1 : exchangeRates[to]?.value;
+    // 修正汇率获取逻辑
+    const fromRate = from === 'USD' ? 1 : (exchangeRates[from]?.value || 1);
+    const toRate = to === 'USD' ? 1 : (exchangeRates[to]?.value || 1);
     const result = amount * (toRate / fromRate);
 
     toAmount.value = formatNumber(result);
@@ -192,6 +193,7 @@ function formatNumber(num) {
 // 事件监听
 document.getElementById('fetchRates').addEventListener('click', fetchExchangeRates);
 document.getElementById('swapBtn').addEventListener('click', () => {
+    // 仅交换货币类型，保持输入金额不变
     [fromCurrency.value, toCurrency.value] = [toCurrency.value, fromCurrency.value];
     calculateConversion();
 });
@@ -212,4 +214,4 @@ fromAmount.addEventListener('blur', () => {
 init();
 </script>
 </body>
-</html> 
+</html>
