@@ -212,11 +212,6 @@ function updateRateDisplay() {
 
     const { rates, date } = lastRates;
     document.getElementById('update-status').textContent = '最新汇率：';
-
-            element.textContent = value?.toLocaleString('en', { 
-            minimumFractionDigits: 4,
-            maximumFractionDigits: 4 
-        }) || '--';
     
     // 计算并显示特定货币对汇率
     document.getElementById('usd-cny').textContent = rates.CNY?.toFixed(4) || '--';
@@ -245,8 +240,6 @@ function performConversion() {
     
     document.getElementById('conversion-result').textContent = 
         `${amount.toFixed(2)} ${from} = ${converted.toFixed(2)} ${to}`;
-
-    resultElement.textContent = `${amount.toLocaleString()} ${from} = ${converted.toLocaleString()} ${to}`;
 }
 
 // 货币互换功能
