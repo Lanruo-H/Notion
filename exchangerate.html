@@ -2,7 +2,7 @@
 <html>
 <head>
     <title>汇率工具</title>
-<style>
+    <style>
         /* Notion风格样式系统 */
         :root {
             --bg-color: #ffffff;
@@ -131,11 +131,22 @@
                 <span>USD/CNY</span>
                 <span id="usd-cny">--</span>
             </div>
-            <!-- 其他汇率项结构相同 -->
+            <div class="rate-item">
+                <span>MOP/HKD</span>
+                <span id="mop-hkd">--</span>
+            </div>
+            <div class="rate-item">
+                <span>TWD/USD</span>
+                <span id="twd-usd">--</span>
+            </div>
+            <div class="rate-item">
+                <span>HKD/USD</span>
+                <span id="hkd-usd">--</span>
+            </div>
         </div>
         <div style="margin-top: 12px; font-size: 12px; color: var(--text-secondary);">
             最后更新：<span id="update-date">--</span>
-        </div>
+        </div>  
     </div>
 
     <!-- 货币转换组件 -->
@@ -201,6 +212,11 @@ function updateRateDisplay() {
 
     const { rates, date } = lastRates;
     document.getElementById('update-status').textContent = '最新汇率：';
+
+            element.textContent = value?.toLocaleString('en', { 
+            minimumFractionDigits: 4,
+            maximumFractionDigits: 4 
+        }) || '--';
     
     // 计算并显示特定货币对汇率
     document.getElementById('usd-cny').textContent = rates.CNY?.toFixed(4) || '--';
@@ -229,6 +245,8 @@ function performConversion() {
     
     document.getElementById('conversion-result').textContent = 
         `${amount.toFixed(2)} ${from} = ${converted.toFixed(2)} ${to}`;
+
+    resultElement.textContent = `${amount.toLocaleString()} ${from} = ${converted.toLocaleString()} ${to}`;
 }
 
 // 货币互换功能
