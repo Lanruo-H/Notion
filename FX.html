@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -16,11 +17,17 @@
             margin-bottom: 24px;
         }
 
+        .rate-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
         .fetch-button {
             background: #37352f;
             color: white;
             border: none;
-            padding: 8px 16px;
+            padding: 8px 12px;
             border-radius: 4px;
             cursor: pointer;
             transition: background 0.2s;
@@ -32,10 +39,10 @@
         }
 
         .rates-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            display: flex;
             gap: 12px;
-            margin-top: 16px;
+            margin-top: 2px;
+            flex-wrap: wrap;
         }
 
         .rate-item {
@@ -43,13 +50,15 @@
             background: #f7f6f3;
             border-radius: 4px;
             font-size: 14px;
+            min-width: 180px;
         }
 
         .converter-row {
             display: flex;
             gap: 8px;
             align-items: center;
-            margin-top: 16px;
+            margin-top: 20px;
+            position: relative;
         }
 
         select, input {
@@ -81,29 +90,47 @@
             font-size: 12px;
             margin-top: 8px;
         }
+
+        .error-message {
+            color: #d1453b;
+            font-size: 12px;
+            margin-left: 12px;
+            position: absolute;
+            right: 0;
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>
     <div class="currency-container">
         <div class="rate-section">
-            <button class="fetch-button" id="fetchRates">获取实时汇率</button>
-            <div class="rates-grid" id="ratesGrid"></div>
+            <div class="rate-header">
+                <button class="fetch-button" id="fetchRates">↻</button>
+                <div class="rates-grid" id="ratesGrid"></div>
+            </div>
             <div class="timestamp" id="timestamp"></div>
         </div>
 
         <div class="converter-section">
             <div class="converter-row">
                 <select id="fromCurrency"></select>
-                <input type="text" id="fromAmount" placeholder="金额">
+                <input type="text" id="fromAmount" placeholder="Amount">
                 <button class="swap-button" id="swapBtn">⇄</button>
                 <select id="toCurrency"></select>
                 <input type="text" id="toAmount" readonly>
+                <div class="error-message" id="errorMessage"></div>
             </div>
         </div>
     </div>
 
 <script>
 const CURRENCIES = ['USD', 'CNY', 'HKD', 'TWD', 'KRW', 'MOP', 'EUR'];
+const PRESET_PAIRS = [
+    { pair: 'USD/CNY', currencies: ['USD', 'CNY'] },
+    { pair: 'USD/HKD', currencies: ['USD', 'HKD'] },
+    { pair: 'USD/TWD', currencies: ['USD', 'TWD'] },
+    { pair: 'MOP/HKD', currencies: ['MOP', 'HKD'] }
+];
 let exchangeRates = null;
 
 // 初始化组件
@@ -118,6 +145,13 @@ function init() {
     });
     fromCurrency.value = 'USD';
     toCurrency.value = 'CNY';
+
+    // 初始化汇率显示
+    ratesGrid.innerHTML = PRESET_PAIRS.map(p => `
+        <div class="rate-item" data-pair="${p.pair}">
+            ${p.pair}: <span class="rate-value">--</span>
+        </div>
+    `).join('');
 }
 
 // 获取实时汇率
@@ -128,31 +162,34 @@ async function fetchExchangeRates() {
         exchangeRates = data.data;
         
         // 更新汇率显示
-        const ratesHTML = [
-            createRateItem('USD/CNY', exchangeRates.CNY.value),
-            createRateItem('USD/HKD', exchangeRates.HKD.value),
-            createRateItem('USD/TWD', exchangeRates.TWD.value),
-            createRateItem('MOP/HKD', exchangeRates.HKD.value / exchangeRates.MOP.value)
-        ].join('');
+        PRESET_PAIRS.forEach(p => {
+            const element = document.querySelector(`[data-pair="${p.pair}"] .rate-value`);
+            if (p.pair === 'MOP/HKD') {
+                const rate = exchangeRates.HKD.value / exchangeRates.MOP.value;
+                element.textContent = rate.toFixed(4);
+            } else {
+                const currency = p.currencies[1];
+                element.textContent = exchangeRates[currency].value.toFixed(4);
+            }
+        });
         
-        ratesGrid.innerHTML = ratesHTML;
-        timestamp.innerHTML = `最后更新：${new Date().toLocaleString()}`;
+        // 格式化时间显示
+        const now = new Date();
+        timestamp.innerHTML = `Last updated: ${now.toLocaleDateString()} ${now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+        errorMessage.textContent = '';
     } catch (error) {
-        alert('获取汇率失败，请稍后重试');
+        errorMessage.textContent = 'Failed to fetch rates';
     }
-}
-
-function createRateItem(pair, rate) {
-    return `<div class="rate-item">${pair}: ${rate.toFixed(4)}</div>`;
 }
 
 // 货币转换计算
 function calculateConversion() {
     if (!exchangeRates) {
-        alert('请先获取实时汇率');
+        errorMessage.textContent = 'Please fetch rates first';
         return;
     }
 
+    errorMessage.textContent = '';
     const from = fromCurrency.value;
     const to = toCurrency.value;
     const amount = parseFloat(fromAmount.value.replace(/,/g, '')) || 0;
@@ -162,16 +199,19 @@ function calculateConversion() {
         return;
     }
 
-    const fromRate = exchangeRates[from]?.value || 1;
-    const toRate = exchangeRates[to]?.value || 1;
+    const fromRate = from === 'USD' ? 1 : exchangeRates[from]?.value;
+    const toRate = to === 'USD' ? 1 : exchangeRates[to]?.value;
     const result = amount * (toRate / fromRate);
 
     toAmount.value = formatNumber(result);
 }
 
-// 格式化千位分隔符
+// 格式化数字
 function formatNumber(num) {
-    return num.toLocaleString('en-US', { maximumFractionDigits: 4 });
+    return num.toLocaleString('en-US', { 
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2 
+    });
 }
 
 // 事件监听
@@ -185,7 +225,7 @@ fromCurrency.addEventListener('change', calculateConversion);
 toCurrency.addEventListener('change', calculateConversion);
 fromAmount.addEventListener('input', calculateConversion);
 
-// 初始化输入框格式化
+// 输入框格式化
 fromAmount.addEventListener('blur', () => {
     const value = parseFloat(fromAmount.value.replace(/,/g, ''));
     if (!isNaN(value)) {
@@ -193,7 +233,7 @@ fromAmount.addEventListener('blur', () => {
     }
 });
 
-// 启动初始化
+// 初始化
 init();
 </script>
 </body>
