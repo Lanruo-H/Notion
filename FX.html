@@ -129,7 +129,7 @@ const PRESET_PAIRS = [
     { pair: 'USD/CNY', currencies: ['USD', 'CNY'] },
     { pair: 'USD/HKD', currencies: ['USD', 'HKD'] },
     { pair: 'USD/TWD', currencies: ['USD', 'TWD'] },
-    { pair: 'HKD/CNY', currencies: ['HKD', 'CNY'] },
+    { pair: 'CNY/HKD', currencies: ['CNY', 'HKD'] },
     { pair: 'MOP/HKD', currencies: ['MOP', 'HKD'] }
 ];
 let exchangeRates = null;
@@ -168,8 +168,8 @@ async function fetchExchangeRates() {
             if (p.pair === 'MOP/HKD') {
                 const rate = exchangeRates.HKD.value / exchangeRates.MOP.value;
                 element.textContent = rate.toFixed(4);
-            } else if (p.pair === 'HKD/CNY') {
-                const rate = exchangeRates.CNY.value / exchangeRates.HKD.value;
+            } else if (p.pair === 'CNY/HKD') {
+                const rate = exchangeRates.HKD.value / exchangeRates.CNY.value;
                 element.textContent = rate.toFixed(4);
             } else {
                 const currency = p.currencies[1];
