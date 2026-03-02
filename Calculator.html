@@ -149,6 +149,7 @@
             gap: 1rem;
             align-items: center;
             margin-top: 0.5rem;
+            flex-wrap: wrap;
         }
         .run-btn {
             background: #2383e2;
@@ -167,6 +168,20 @@
         }
         .run-btn:active {
             transform: scale(0.98);
+        }
+        .reset-btn {
+            background: #f0f0f0;
+            color: #3f3f3f;
+            font-weight: 500;
+            border: 1px solid #d0d0d0;
+            padding: 0.7rem 2rem;
+            border-radius: 30px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .reset-btn:hover {
+            background: #e4e4e4;
         }
         .result-area {
             margin-top: 2.5rem;
@@ -251,18 +266,14 @@
             <button class="add-group-btn" id="addGroupBtn">➕ 添加组</button>
         </div>
         <div class="groups-container" id="groupsContainer">
-            <!-- 默认 GroupA 输入框 -->
-            <div class="group-row" data-group="GroupA">
-                <span class="group-label">GroupA</span>
-                <input class="group-input" id="GroupA" placeholder="例如 15" value="9">
-                <button class="remove-group" title="移除组" style="visibility: hidden;">✕</button>
-            </div>
+            <!-- 默认 GroupA 会通过JavaScript动态生成，以保证统一逻辑 -->
         </div>
     </div>
 
     <!-- 操作按钮 -->
     <div class="action-buttons">
         <button class="run-btn" id="runBtn">运行分组</button>
+        <button class="reset-btn" id="resetBtn">⟲ 初始化</button>
     </div>
 
     <!-- 结果输出区域 -->
@@ -277,7 +288,7 @@
 
 <script>
     (function() {
-        // ----- 解析数字（支持括号负数，逗号，小数点截断）-----
+        // ---------- 工具函数：解析数字（支持括号负数、逗号、小数点截断）----------
         function parseNumber(str) {
             if (typeof str !== 'string') str = String(str);
             str = str.trim();
@@ -301,117 +312,139 @@
             return negative ? -num : num;
         }
 
-        // ----- 管理动态组 -----
+        // ---------- DOM 元素 ----------
+        const numberInput = document.getElementById('numberInput');
         const groupsContainer = document.getElementById('groupsContainer');
         const addGroupBtn = document.getElementById('addGroupBtn');
+        const runBtn = document.getElementById('runBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const resultContent = document.getElementById('resultContent');
 
-        // 获取当前组名列表 (按字母顺序 GroupA, GroupB ...)
+        // ---------- 动态组管理 ----------
+        // 获取当前所有组名
         function getCurrentGroupNames() {
             const rows = groupsContainer.querySelectorAll('.group-row');
-            const names = [];
+            return Array.from(rows).map(row => row.querySelector('.group-label').textContent.trim());
+        }
+
+        // 更新所有移除按钮的可见性 (只有一组时隐藏所有移除按钮)
+        function updateRemoveButtons() {
+            const rows = groupsContainer.querySelectorAll('.group-row');
+            const visible = rows.length > 1;
             rows.forEach(row => {
-                const label = row.querySelector('.group-label');
-                if (label) names.push(label.textContent.trim());
-            });
-            return names;
-        }
-
-        // 生成下一个组名 (GroupA, GroupB ...)
-        function nextGroupName() {
-            const existing = getCurrentGroupNames();
-            if (existing.length === 0) return 'GroupA';
-            const last = existing[existing.length - 1];
-            const prefix = 'Group';
-            if (last.startsWith(prefix)) {
-                const letter = last.slice(prefix.length);
-                if (letter.length === 1 && letter >= 'A' && letter <= 'Z') {
-                    const nextChar = String.fromCharCode(letter.charCodeAt(0) + 1);
-                    return prefix + nextChar;
+                const btn = row.querySelector('.remove-group');
+                if (btn) {
+                    btn.style.visibility = visible ? 'visible' : 'hidden';
                 }
-            }
-            // 降级：Group + 数字
-            return 'Group' + (existing.length + 1);
+            });
         }
 
-        // 添加新组
-        function addGroup() {
-            const newName = nextGroupName();
-            const newRow = document.createElement('div');
-            newRow.className = 'group-row';
-            newRow.setAttribute('data-group', newName);
+        // 创建一行组输入
+        function createGroupRow(groupName, initialValue = '0') {
+            const row = document.createElement('div');
+            row.className = 'group-row';
+            row.setAttribute('data-group', groupName);
 
             const labelSpan = document.createElement('span');
             labelSpan.className = 'group-label';
-            labelSpan.textContent = newName;
+            labelSpan.textContent = groupName;
 
             const input = document.createElement('input');
             input.className = 'group-input';
-            input.id = newName;
+            input.id = groupName;  // id可选，便于测试
             input.placeholder = '例如 20';
-            input.value = '0';
+            input.value = initialValue;
 
             const removeBtn = document.createElement('button');
             removeBtn.className = 'remove-group';
             removeBtn.title = '移除组';
             removeBtn.innerHTML = '✕';
-            removeBtn.onclick = function() {
-                if (getCurrentGroupNames().length <= 1) {
+
+            // 移除事件
+            removeBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const currentRows = groupsContainer.querySelectorAll('.group-row');
+                if (currentRows.length <= 1) {
                     alert('至少保留一个组');
                     return;
                 }
-                newRow.remove();
-            };
+                row.remove();
+                updateRemoveButtons(); // 手动更新按钮可见性
+            });
 
-            newRow.appendChild(labelSpan);
-            newRow.appendChild(input);
-            newRow.appendChild(removeBtn);
-            groupsContainer.appendChild(newRow);
+            row.appendChild(labelSpan);
+            row.appendChild(input);
+            row.appendChild(removeBtn);
+            return row;
         }
 
+        // 重置组容器为默认状态 (只有GroupA)
+        function resetGroupsToDefault() {
+            groupsContainer.innerHTML = ''; // 清空
+            const defaultRow = createGroupRow('GroupA', '9');
+            groupsContainer.appendChild(defaultRow);
+            updateRemoveButtons();
+        }
+
+        // 添加新组 (自动生成下一个组名)
+        function addGroup() {
+            const existingNames = getCurrentGroupNames();
+            let newName = 'GroupA';
+            if (existingNames.length > 0) {
+                // 取最后一个组名递增
+                const last = existingNames[existingNames.length - 1];
+                const prefix = 'Group';
+                if (last.startsWith(prefix)) {
+                    const letter = last.slice(prefix.length);
+                    if (letter.length === 1 && letter >= 'A' && letter <= 'Z') {
+                        const nextChar = String.fromCharCode(letter.charCodeAt(0) + 1);
+                        newName = prefix + nextChar;
+                    } else {
+                        // 降级：Group + 数字
+                        newName = 'Group' + (existingNames.length + 1);
+                    }
+                } else {
+                    newName = 'Group' + (existingNames.length + 1);
+                }
+            }
+            const newRow = createGroupRow(newName, '0');
+            groupsContainer.appendChild(newRow);
+            updateRemoveButtons();
+        }
+
+        // 绑定添加组事件
         addGroupBtn.addEventListener('click', addGroup);
 
-        // 初始使GroupA的移除按钮隐藏（至少保留一个组不可删）
-        function adjustRemoveButtons() {
-            const rows = groupsContainer.querySelectorAll('.group-row');
-            rows.forEach((row, index) => {
-                const btn = row.querySelector('.remove-group');
-                if (btn) {
-                    if (rows.length === 1) {
-                        btn.style.visibility = 'hidden';
-                    } else {
-                        btn.style.visibility = 'visible';
-                    }
-                }
-            });
-        }
-        // 每次添加/删除后调整
-        const observer = new MutationObserver(adjustRemoveButtons);
-        observer.observe(groupsContainer, { childList: true, subtree: false });
-        adjustRemoveButtons();
-
-        // ----- 核心算法 (回溯分配, 保留原始索引) -----
+        // ---------- 求解算法 (回溯分配，保留原始顺序) ----------
         function solveGrouping(numbers, groupTargets) {
-            // numbers: 数字值数组 (保持原始顺序)
-            // groupTargets: { GroupA: 目标, GroupB: ... }
             const groupNames = Object.keys(groupTargets);
-            const totalNums = numbers.reduce((a,b) => a + b, 0);
-            const totalTargets = Object.values(groupTargets).reduce((a,b) => a + b, 0);
+            const totalNums = numbers.reduce((a, b) => a + b, 0);
+            const totalTargets = Object.values(groupTargets).reduce((a, b) => a + b, 0);
 
             // 1. 总和校验
             if (totalNums !== totalTargets) {
                 return { success: false, error: 'total_mismatch' };
             }
 
-            // 2. 分离零和非零，并保留索引
+            // 2. 分离零和非零，保留索引
             const indexed = numbers.map((val, idx) => ({ val, idx }));
             const zeroItems = indexed.filter(item => item.val === 0);
             const nonZeroItems = indexed.filter(item => item.val !== 0);
 
-            // 3. 对非零按绝对值降序排序 (便于回溯)
-            nonZeroItems.sort((a, b) => Math.abs(b.val) - Math.abs(a.val));
+            if (nonZeroItems.length === 0) {
+                // 全部是零：随便分配，按顺序平均分给各组即可（这里简单全给第一组）
+                const assignment = new Array(numbers.length).fill(null);
+                if (zeroItems.length > 0 && groupNames.length > 0) {
+                    zeroItems.forEach(item => { assignment[item.idx] = groupNames[0]; });
+                }
+                const rows = numbers.map((val, i) => ({ value: val, group: assignment[i] || groupNames[0] }));
+                return { success: true, rows };
+            }
 
-            // 4. 准备回溯数据结构
+            // 3. 非零按绝对值降序排序
+            nonZeroItems.sort((a, b) => Math.abs(b.val) - Math.abs(a.val));
             const n = nonZeroItems.length;
+
             // 后缀正负和剪枝
             const posSuffix = new Array(n + 1).fill(0);
             const negSuffix = new Array(n + 1).fill(0);
@@ -421,32 +454,21 @@
                 negSuffix[i] = negSuffix[i + 1] + (v < 0 ? v : 0);
             }
 
-            // 当前各组累积和
             const curSum = {};
             groupNames.forEach(g => curSum[g] = 0);
-
-            // 分配记录：assignment[原始索引] = 组名，初始null
             const assignment = new Array(numbers.length).fill(null);
 
-            // 按组名顺序稳定尝试 (优先尝试需求差异大的组，但这里用简单顺序)
-            // 为优化，我们可以先对组按目标值排序，但顺序不影响正确性
-
-            // 递归函数 idx 处理 nonZeroItems 的索引
-            const backtrack = (idx) => {
+            // 回溯
+            function backtrack(idx) {
                 if (idx === n) {
-                    // 所有非零已分配，检查是否恰好达到目标 (必须完全相等)
-                    for (let g of groupNames) {
-                        if (curSum[g] !== groupTargets[g]) return false;
-                    }
-                    return true;
+                    return groupNames.every(g => curSum[g] === groupTargets[g]);
                 }
 
                 const item = nonZeroItems[idx];
                 const val = item.val;
                 const origIdx = item.idx;
 
-                // 尝试所有组
-                // 先尝试那些加上当前值恰好等于目标值的组 (剪枝)
+                // 先尝试能恰好完成一组的组
                 const perfectMatches = groupNames.filter(g => curSum[g] + val === groupTargets[g]);
                 for (let g of perfectMatches) {
                     const newSum = curSum[g] + val;
@@ -458,12 +480,12 @@
                     curSum[g] -= val;
                 }
 
-                // 其余组 (按当前差距降序尝试，增加剪枝)
+                // 其余组按当前差距降序
                 const otherGroups = groupNames.filter(g => !perfectMatches.includes(g));
                 otherGroups.sort((a, b) => {
                     const diffA = Math.abs(groupTargets[a] - curSum[a]);
                     const diffB = Math.abs(groupTargets[b] - curSum[b]);
-                    return diffB - diffA; // 降序
+                    return diffB - diffA;
                 });
                 for (let g of otherGroups) {
                     const newSum = curSum[g] + val;
@@ -475,48 +497,42 @@
                     curSum[g] -= val;
                 }
                 return false;
-            };
+            }
 
             const possible = backtrack(0);
             if (!possible) {
                 return { success: false, error: 'no_solution' };
             }
 
-            // 5. 分配零值 (轮询分配，使零散落在各组)
+            // 分配零值（轮询给各组，保持视觉均匀）
             if (zeroItems.length > 0) {
-                // 按原始顺序分配零值
-                let gIndex = 0;
+                let gIdx = 0;
                 for (let zero of zeroItems) {
-                    const group = groupNames[gIndex % groupNames.length];
+                    const group = groupNames[gIdx % groupNames.length];
                     assignment[zero.idx] = group;
-                    gIndex++;
+                    gIdx++;
                 }
             }
 
-            // 6. 构建结果数组 (按原始索引顺序)
-            const resultRows = [];
+            // 构建结果行（按原始索引顺序）
+            const rows = [];
             for (let i = 0; i < numbers.length; i++) {
-                resultRows.push({
-                    index: i,
+                rows.push({
                     value: numbers[i],
-                    group: assignment[i] || '未分配'  // 理论上不会
+                    group: assignment[i] || '未分配' // 理论上不会
                 });
             }
-            return { success: true, rows: resultRows };
+            return { success: true, rows };
         }
 
-        // ----- 运行按钮逻辑 -----
-        const runBtn = document.getElementById('runBtn');
-        const numberInput = document.getElementById('numberInput');
-        const resultContent = document.getElementById('resultContent');
-
+        // ---------- 渲染结果 ----------
         function renderResult(rows, errorMsg = null) {
             if (errorMsg) {
-                let msg = '';
-                if (errorMsg === 'total_mismatch') msg = '❌ 总和校验失败：所有数字总和与组目标总和不等';
-                else if (errorMsg === 'no_solution') msg = '❌ 无解：无法将数字分配到各组满足目标 (可尝试调整数字或目标)';
-                else msg = '❌ ' + errorMsg;
-                resultContent.innerHTML = <div class="message-banner">${msg}</div>;
+                let displayMsg = '';
+                if (errorMsg === 'total_mismatch') displayMsg = '❌ 总和校验失败：所有数字总和与组目标总和不等';
+                else if (errorMsg === 'no_solution') displayMsg = '❌ 无解：无法将数字分配到各组满足目标 (可调整数字或目标)';
+                else displayMsg = '❌ ' + errorMsg;
+                resultContent.innerHTML = <div class="message-banner">${displayMsg}</div>;
                 return;
             }
 
@@ -525,26 +541,24 @@
                 return;
             }
 
-            // 构建表格
             let html = <table class="result-table"><thead><tr><th>#</th><th>数字</th><th>所属组</th></tr></thead><tbody>;
             rows.forEach((r, idx) => {
                 const groupClass = r.group ? 'group-badge' : 'null-badge';
-                const groupDisplay = r.group ? r.group : '—';
+                const groupDisplay = r.group || '—';
                 html += <tr>                     <td style="color:#9a9a9a;">${idx + 1}</td>                     <td style="font-weight:500;">${r.value}</td>                     <td><span class="${groupClass}">${groupDisplay}</span></td>                 </tr>;
             });
             html += </tbody></table>;
             resultContent.innerHTML = html;
         }
 
-        runBtn.addEventListener('click', function() {
-            // 获取数字输入
+        // ---------- 运行分组 ----------
+        function runGrouping() {
+            // 获取数字
             const rawText = numberInput.value.trim();
             if (!rawText) {
                 renderResult(null, '请输入数字');
                 return;
             }
-
-            // 解析数字
             const tokens = rawText.split(/\s+/);
             const numbers = [];
             for (let t of tokens) {
@@ -558,32 +572,58 @@
             }
 
             // 获取组目标
-            const groupRows = groupsContainer.querySelectorAll('.group-row');
-            if (groupRows.length === 0) {
+            const rows = groupsContainer.querySelectorAll('.group-row');
+            if (rows.length === 0) {
                 renderResult(null, '至少需要一个组');
                 return;
             }
-
             const groupTargets = {};
-            for (let row of groupRows) {
+            for (let row of rows) {
                 const label = row.querySelector('.group-label').textContent.trim();
                 const input = row.querySelector('.group-input');
-                if (!input) continue;
                 const val = parseNumber(input.value);
                 groupTargets[label] = val;
             }
 
-            // 调用求解
             const result = solveGrouping(numbers, groupTargets);
             if (result.success) {
                 renderResult(result.rows);
             } else {
                 renderResult(null, result.error);
             }
+        }
+
+        runBtn.addEventListener('click', runGrouping);
+
+        // ---------- 初始化按钮：重置数字和组至默认 ----------
+        function resetToInitial() {
+            // 重置数字输入框为示例
+            numberInput.value = '10  -5  (3)  0  8  (1)  2';
+            // 重置组
+            resetGroupsToDefault();
+            // 清空结果区域
+            resultContent.innerHTML = '<div class="message-banner">点击“运行分组”查看按原始顺序排列的数字归属</div>';
+        }
+
+        resetBtn.addEventListener('click', resetToInitial);
+
+        // ---------- 页面加载完成后，确保初始状态正确 ----------
+        window.addEventListener('DOMContentLoaded', function() {
+            // 如果groupsContainer为空，则插入默认组
+            if (groupsContainer.children.length === 0) {
+                resetGroupsToDefault();
+            } else {
+                // 以防万一，更新按钮可见性
+                updateRemoveButtons();
+            }
         });
 
-        // 初始化默认填入示例
-        // 已有示例文本，无需额外操作
+        // 由于脚本在body末尾，DOM已存在，但为了保险手动调用一次
+        if (groupsContainer.children.length === 0) {
+            resetGroupsToDefault();
+        } else {
+            updateRemoveButtons();
+        }
     })();
 </script>
 </body>
