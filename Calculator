@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数字分组 · Notion风格</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji";
+        }
+        body {
+            background-color: #f7f7f8;
+            display: flex;
+            justify-content: center;
+            padding: 2rem 1rem;
+        }
+        .notion-card {
+            max-width: 900px;
+            width: 100%;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 4px 12px rgba(0,0,0,0.08);
+            padding: 2rem 2rem 2.5rem;
+            transition: box-shadow 0.2s ease;
+        }
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            color: #1f1f1f;
+            margin-bottom: 0.2rem;
+        }
+        .subhead {
+            font-size: 0.95rem;
+            color: #6b6b6b;
+            border-bottom: 1px solid #e9e9e9;
+            padding-bottom: 1.2rem;
+            margin-bottom: 2rem;
+        }
+        .section-label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+            color: #9a9a9a;
+            margin-bottom: 0.6rem;
+        }
+        .input-area {
+            margin-bottom: 2rem;
+        }
+        textarea {
+            width: 100%;
+            padding: 0.9rem 1rem;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            border: 1px solid #e3e3e3;
+            border-radius: 10px;
+            background: #ffffff;
+            resize: vertical;
+            transition: border 0.15s, box-shadow 0.15s;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.02);
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #2383e2;
+            box-shadow: 0 0 0 3px rgba(35, 131, 226, 0.1);
+        }
+        .groups-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.6rem;
+        }
+        .add-group-btn {
+            background: none;
+            border: 1px solid #e3e3e3;
+            border-radius: 30px;
+            padding: 0.3rem 1rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #5f5f5f;
+            cursor: pointer;
+            transition: background 0.1s, border-color 0.1s;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .add-group-btn:hover {
+            background: #f3f3f3;
+            border-color: #c7c7c7;
+        }
+        .groups-container {
+            background: #fafafa;
+            border-radius: 12px;
+            padding: 1.5rem 1.2rem;
+            margin-bottom: 2rem;
+            border: 1px solid #f0f0f0;
+        }
+        .group-row {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            margin-bottom: 1rem;
+        }
+        .group-row:last-child {
+            margin-bottom: 0;
+        }
+        .group-label {
+            font-weight: 500;
+            color: #2e2e2e;
+            min-width: 70px;
+            font-size: 1rem;
+        }
+        .group-input {
+            flex: 1;
+            padding: 0.65rem 1rem;
+            border: 1px solid #e3e3e3;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            background: white;
+            transition: border 0.15s;
+        }
+        .group-input:focus {
+            outline: none;
+            border-color: #2383e2;
+            box-shadow: 0 0 0 3px rgba(35, 131, 226, 0.08);
+        }
+        .remove-group {
+            background: none;
+            border: none;
+            color: #b1b1b1;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0.2rem 0.4rem;
+            border-radius: 6px;
+            line-height: 1;
+            transition: background 0.1s, color 0.1s;
+        }
+        .remove-group:hover {
+            background: #f0f0f0;
+            color: #e03e3e;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            margin-top: 0.5rem;
+        }
+        .run-btn {
+            background: #2383e2;
+            color: white;
+            font-weight: 500;
+            border: none;
+            padding: 0.7rem 2rem;
+            border-radius: 30px;
+            font-size: 1rem;
+            cursor: pointer;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+            transition: background 0.15s, transform 0.05s;
+        }
+        .run-btn:hover {
+            background: #1b6bb7;
+        }
+        .run-btn:active {
+            transform: scale(0.98);
+        }
+        .result-area {
+            margin-top: 2.5rem;
+            border-top: 1px solid #ededed;
+            padding-top: 1.8rem;
+        }
+        .result-title {
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: #1f1f1f;
+            margin-bottom: 1.2rem;
+        }
+        .message-banner {
+            background: #fef6e0;
+            border-radius: 10px;
+            padding: 1rem 1.4rem;
+            color: #89632a;
+            font-size: 0.95rem;
+            border: 1px solid #ffe7a3;
+            margin-bottom: 1.2rem;
+        }
+        .result-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        }
+        .result-table th {
+            text-align: left;
+            background: #f7f7f8;
+            padding: 0.8rem 1.2rem;
+            font-weight: 500;
+            color: #5f5f5f;
+            font-size: 0.9rem;
+            border-bottom: 1px solid #eaeaea;
+        }
+        .result-table td {
+            padding: 0.8rem 1.2rem;
+            border-bottom: 1px solid #f0f0f0;
+            color: #1f1f1f;
+        }
+        .result-table tr:last-child td {
+            border-bottom: none;
+        }
+        .group-badge {
+            background: #eceef0;
+            padding: 0.2rem 0.7rem;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #2e2e2e;
+            display: inline-block;
+        }
+        .null-badge {
+            color: #b1b1b1;
+            font-style: italic;
+        }
+        .footer-note {
+            font-size: 0.85rem;
+            color: #9b9b9b;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+<div class="notion-card">
+    <h1>数字分组</h1>
+    <div class="subhead">将输入的数字分配到各组，使每组总和等于目标值</div>
+
+    <!-- 原始数字输入 -->
+    <div class="input-area">
+        <span class="section-label">📋 数字列表（空格/换行分隔）</span>
+        <textarea id="numberInput" rows="4" placeholder="例如：5  -3  (7)  1,234  0  (2)">10  -5  (3)  0  8  (1)  2</textarea>
+    </div>
+
+    <!-- 组目标区域，可动态添加 -->
+    <div class="input-area">
+        <div class="groups-header">
+            <span class="section-label">🎯 组目标总和</span>
+            <button class="add-group-btn" id="addGroupBtn">➕ 添加组</button>
+        </div>
+        <div class="groups-container" id="groupsContainer">
+            <!-- 默认 GroupA 输入框 -->
+            <div class="group-row" data-group="GroupA">
+                <span class="group-label">GroupA</span>
+                <input class="group-input" id="GroupA" placeholder="例如 15" value="9">
+                <button class="remove-group" title="移除组" style="visibility: hidden;">✕</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 操作按钮 -->
+    <div class="action-buttons">
+        <button class="run-btn" id="runBtn">运行分组</button>
+    </div>
+
+    <!-- 结果输出区域 -->
+    <div class="result-area" id="resultArea">
+        <div class="result-title">📦 分配结果</div>
+        <div id="resultContent">
+            <div class="message-banner">点击“运行分组”查看按原始顺序排列的数字归属</div>
+        </div>
+    </div>
+    <div class="footer-note">支持负数括号 (5)、千位分隔符 1,000、小数点自动取整</div>
+</div>
+
+<script>
+    (function() {
+        // ----- 解析数字（支持括号负数，逗号，小数点截断）-----
+        function parseNumber(str) {
+            if (typeof str !== 'string') str = String(str);
+            str = str.trim();
+            if (str === '') return 0;
+
+            let negative = false;
+            if (str.startsWith('(') && str.endsWith(')')) {
+                negative = true;
+                str = str.slice(1, -1).trim();
+            }
+            // 移除千位逗号
+            str = str.replace(/,/g, '');
+            // 取小数点之前（整数部分）
+            if (str.includes('.')) {
+                str = str.split('.')[0];
+            }
+            // 如果只剩下负号或空字符串，返回0
+            if (str === '' || str === '-') return 0;
+            let num = parseInt(str, 10);
+            if (isNaN(num)) num = 0;
+            return negative ? -num : num;
+        }
+
+        // ----- 管理动态组 -----
+        const groupsContainer = document.getElementById('groupsContainer');
+        const addGroupBtn = document.getElementById('addGroupBtn');
+
+        // 获取当前组名列表 (按字母顺序 GroupA, GroupB ...)
+        function getCurrentGroupNames() {
+            const rows = groupsContainer.querySelectorAll('.group-row');
+            const names = [];
+            rows.forEach(row => {
+                const label = row.querySelector('.group-label');
+                if (label) names.push(label.textContent.trim());
+            });
+            return names;
+        }
+
+        // 生成下一个组名 (GroupA, GroupB ...)
+        function nextGroupName() {
+            const existing = getCurrentGroupNames();
+            if (existing.length === 0) return 'GroupA';
+            const last = existing[existing.length - 1];
+            const prefix = 'Group';
+            if (last.startsWith(prefix)) {
+                const letter = last.slice(prefix.length);
+                if (letter.length === 1 && letter >= 'A' && letter <= 'Z') {
+                    const nextChar = String.fromCharCode(letter.charCodeAt(0) + 1);
+                    return prefix + nextChar;
+                }
+            }
+            // 降级：Group + 数字
+            return 'Group' + (existing.length + 1);
+        }
+
+        // 添加新组
+        function addGroup() {
+            const newName = nextGroupName();
+            const newRow = document.createElement('div');
+            newRow.className = 'group-row';
+            newRow.setAttribute('data-group', newName);
+
+            const labelSpan = document.createElement('span');
+            labelSpan.className = 'group-label';
+            labelSpan.textContent = newName;
+
+            const input = document.createElement('input');
+            input.className = 'group-input';
+            input.id = newName;
+            input.placeholder = '例如 20';
+            input.value = '0';
+
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'remove-group';
+            removeBtn.title = '移除组';
+            removeBtn.innerHTML = '✕';
+            removeBtn.onclick = function() {
+                if (getCurrentGroupNames().length <= 1) {
+                    alert('至少保留一个组');
+                    return;
+                }
+                newRow.remove();
+            };
+
+            newRow.appendChild(labelSpan);
+            newRow.appendChild(input);
+            newRow.appendChild(removeBtn);
+            groupsContainer.appendChild(newRow);
+        }
+
+        addGroupBtn.addEventListener('click', addGroup);
+
+        // 初始使GroupA的移除按钮隐藏（至少保留一个组不可删）
+        function adjustRemoveButtons() {
+            const rows = groupsContainer.querySelectorAll('.group-row');
+            rows.forEach((row, index) => {
+                const btn = row.querySelector('.remove-group');
+                if (btn) {
+                    if (rows.length === 1) {
+                        btn.style.visibility = 'hidden';
+                    } else {
+                        btn.style.visibility = 'visible';
+                    }
+                }
+            });
+        }
+        // 每次添加/删除后调整
+        const observer = new MutationObserver(adjustRemoveButtons);
+        observer.observe(groupsContainer, { childList: true, subtree: false });
+        adjustRemoveButtons();
+
+        // ----- 核心算法 (回溯分配, 保留原始索引) -----
+        function solveGrouping(numbers, groupTargets) {
+            // numbers: 数字值数组 (保持原始顺序)
+            // groupTargets: { GroupA: 目标, GroupB: ... }
+            const groupNames = Object.keys(groupTargets);
+            const totalNums = numbers.reduce((a,b) => a + b, 0);
+            const totalTargets = Object.values(groupTargets).reduce((a,b) => a + b, 0);
+
+            // 1. 总和校验
+            if (totalNums !== totalTargets) {
+                return { success: false, error: 'total_mismatch' };
+            }
+
+            // 2. 分离零和非零，并保留索引
+            const indexed = numbers.map((val, idx) => ({ val, idx }));
+            const zeroItems = indexed.filter(item => item.val === 0);
+            const nonZeroItems = indexed.filter(item => item.val !== 0);
+
+            // 3. 对非零按绝对值降序排序 (便于回溯)
+            nonZeroItems.sort((a, b) => Math.abs(b.val) - Math.abs(a.val));
+
+            // 4. 准备回溯数据结构
+            const n = nonZeroItems.length;
+            // 后缀正负和剪枝
+            const posSuffix = new Array(n + 1).fill(0);
+            const negSuffix = new Array(n + 1).fill(0);
+            for (let i = n - 1; i >= 0; i--) {
+                const v = nonZeroItems[i].val;
+                posSuffix[i] = posSuffix[i + 1] + (v > 0 ? v : 0);
+                negSuffix[i] = negSuffix[i + 1] + (v < 0 ? v : 0);
+            }
+
+            // 当前各组累积和
+            const curSum = {};
+            groupNames.forEach(g => curSum[g] = 0);
+
+            // 分配记录：assignment[原始索引] = 组名，初始null
+            const assignment = new Array(numbers.length).fill(null);
+
+            // 按组名顺序稳定尝试 (优先尝试需求差异大的组，但这里用简单顺序)
+            // 为优化，我们可以先对组按目标值排序，但顺序不影响正确性
+
+            // 递归函数 idx 处理 nonZeroItems 的索引
+            const backtrack = (idx) => {
+                if (idx === n) {
+                    // 所有非零已分配，检查是否恰好达到目标 (必须完全相等)
+                    for (let g of groupNames) {
+                        if (curSum[g] !== groupTargets[g]) return false;
+                    }
+                    return true;
+                }
+
+                const item = nonZeroItems[idx];
+                const val = item.val;
+                const origIdx = item.idx;
+
+                // 尝试所有组
+                // 先尝试那些加上当前值恰好等于目标值的组 (剪枝)
+                const perfectMatches = groupNames.filter(g => curSum[g] + val === groupTargets[g]);
+                for (let g of perfectMatches) {
+                    const newSum = curSum[g] + val;
+                    if (newSum + posSuffix[idx + 1] < groupTargets[g] || newSum + negSuffix[idx + 1] > groupTargets[g]) continue;
+                    curSum[g] = newSum;
+                    assignment[origIdx] = g;
+                    if (backtrack(idx + 1)) return true;
+                    assignment[origIdx] = null;
+                    curSum[g] -= val;
+                }
+
+                // 其余组 (按当前差距降序尝试，增加剪枝)
+                const otherGroups = groupNames.filter(g => !perfectMatches.includes(g));
+                otherGroups.sort((a, b) => {
+                    const diffA = Math.abs(groupTargets[a] - curSum[a]);
+                    const diffB = Math.abs(groupTargets[b] - curSum[b]);
+                    return diffB - diffA; // 降序
+                });
+                for (let g of otherGroups) {
+                    const newSum = curSum[g] + val;
+                    if (newSum + posSuffix[idx + 1] < groupTargets[g] || newSum + negSuffix[idx + 1] > groupTargets[g]) continue;
+                    curSum[g] = newSum;
+                    assignment[origIdx] = g;
+                    if (backtrack(idx + 1)) return true;
+                    assignment[origIdx] = null;
+                    curSum[g] -= val;
+                }
+                return false;
+            };
+
+            const possible = backtrack(0);
+            if (!possible) {
+                return { success: false, error: 'no_solution' };
+            }
+
+            // 5. 分配零值 (轮询分配，使零散落在各组)
+            if (zeroItems.length > 0) {
+                // 按原始顺序分配零值
+                let gIndex = 0;
+                for (let zero of zeroItems) {
+                    const group = groupNames[gIndex % groupNames.length];
+                    assignment[zero.idx] = group;
+                    gIndex++;
+                }
+            }
+
+            // 6. 构建结果数组 (按原始索引顺序)
+            const resultRows = [];
+            for (let i = 0; i < numbers.length; i++) {
+                resultRows.push({
+                    index: i,
+                    value: numbers[i],
+                    group: assignment[i] || '未分配'  // 理论上不会
+                });
+            }
+            return { success: true, rows: resultRows };
+        }
+
+        // ----- 运行按钮逻辑 -----
+        const runBtn = document.getElementById('runBtn');
+        const numberInput = document.getElementById('numberInput');
+        const resultContent = document.getElementById('resultContent');
+
+        function renderResult(rows, errorMsg = null) {
+            if (errorMsg) {
+                let msg = '';
+                if (errorMsg === 'total_mismatch') msg = '❌ 总和校验失败：所有数字总和与组目标总和不等';
+                else if (errorMsg === 'no_solution') msg = '❌ 无解：无法将数字分配到各组满足目标 (可尝试调整数字或目标)';
+                else msg = '❌ ' + errorMsg;
+                resultContent.innerHTML = <div class="message-banner">${msg}</div>;
+                return;
+            }
+
+            if (!rows || rows.length === 0) {
+                resultContent.innerHTML = <div class="message-banner">没有数字可显示</div>;
+                return;
+            }
+
+            // 构建表格
+            let html = <table class="result-table"><thead><tr><th>#</th><th>数字</th><th>所属组</th></tr></thead><tbody>;
+            rows.forEach((r, idx) => {
+                const groupClass = r.group ? 'group-badge' : 'null-badge';
+                const groupDisplay = r.group ? r.group : '—';
+                html += <tr>                     <td style="color:#9a9a9a;">${idx + 1}</td>                     <td style="font-weight:500;">${r.value}</td>                     <td><span class="${groupClass}">${groupDisplay}</span></td>                 </tr>;
+            });
+            html += </tbody></table>;
+            resultContent.innerHTML = html;
+        }
+
+        runBtn.addEventListener('click', function() {
+            // 获取数字输入
+            const rawText = numberInput.value.trim();
+            if (!rawText) {
+                renderResult(null, '请输入数字');
+                return;
+            }
+
+            // 解析数字
+            const tokens = rawText.split(/\s+/);
+            const numbers = [];
+            for (let t of tokens) {
+                if (t === '') continue;
+                try {
+                    numbers.push(parseNumber(t));
+                } catch (e) {
+                    renderResult(null, 无法解析数字: "${t}");
+                    return;
+                }
+            }
+
+            // 获取组目标
+            const groupRows = groupsContainer.querySelectorAll('.group-row');
+            if (groupRows.length === 0) {
+                renderResult(null, '至少需要一个组');
+                return;
+            }
+
+            const groupTargets = {};
+            for (let row of groupRows) {
+                const label = row.querySelector('.group-label').textContent.trim();
+                const input = row.querySelector('.group-input');
+                if (!input) continue;
+                const val = parseNumber(input.value);
+                groupTargets[label] = val;
+            }
+
+            // 调用求解
+            const result = solveGrouping(numbers, groupTargets);
+            if (result.success) {
+                renderResult(result.rows);
+            } else {
+                renderResult(null, result.error);
+            }
+        });
+
+        // 初始化默认填入示例
+        // 已有示例文本，无需额外操作
+    })();
+</script>
+</body>
+</html>
